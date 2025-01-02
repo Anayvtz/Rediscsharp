@@ -68,8 +68,8 @@ namespace rediscsharp
                             }
                             else if (cmda[0].Equals("SET", StringComparison.OrdinalIgnoreCase))
                             {
-                                string key = cmdsa[1];
-                                string value = cmdsa[2];
+                                string key = cmda[1];
+                                string value = cmda[2];
                                 _memDb.Set(key, value);
                                 string ok = Srlz.srlz_simple_str("OK");
                                 _writer.WriteLine(ok);

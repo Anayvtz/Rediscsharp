@@ -32,7 +32,7 @@ namespace rediscsharp
                     var client = listener.AcceptTcpClient();
                     // Create a new thread for each incoming client
                     var clientThread = new Thread(new ConnClient(client).HandleClient);
-                    clientThread.Start();
+                    clientThread.Start(client);
                 }
                 catch (Exception ex)
                 {
@@ -41,47 +41,6 @@ namespace rediscsharp
             }
         }
 
-        private static void HandleClient(object obj)
-        {
-            var client = (TcpClient)obj;
-            var stream = client.GetStream();
-            var reader = new StreamReader(stream, Encoding.ASCII);
-            var writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
-
-            Console.WriteLine("Client connected.");
-
-            try
-            {
-                while (true)
-                {
-                    // Read the command from the client
-                    var command = reader.ReadLine();
-                    if (string.IsNullOrEmpty(command))
-                        break;
-
-                    Console.WriteLine($"Received command: {command}");
-
-                    // Handle the PING command
-                    if (command.Equals("PING", StringComparison.OrdinalIgnoreCase))
-                    {
-                        writer.WriteLine("+PONG");
-                    }
-                    else
-                    {
-                        // Unknown command handling (optional)
-                        writer.WriteLine("-ERR unknown command");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error handling client: {ex.Message}");
-            }
-            finally
-            {
-                client.Close();
-                Console.WriteLine("Client disconnected.");
-            }
-        }
+        
     }
 }
