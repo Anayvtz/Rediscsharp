@@ -10,6 +10,7 @@ namespace rediscsharp
         private TcpClient _tcpClient;
         private StreamReader _reader;
         private StreamWriter _writer;
+        private MemDb _memDb;
 
         // Constructor to initialize with TcpClient
         public ConnClient(TcpClient tcpClient)
@@ -18,6 +19,7 @@ namespace rediscsharp
             var stream = _tcpClient.GetStream();
             _reader = new StreamReader(stream, Encoding.ASCII);
             _writer = new StreamWriter(stream, Encoding.ASCII) { AutoFlush = true };
+            _memDb = new MemDb();
         }
 
         // Method to handle the client communication
@@ -36,16 +38,58 @@ namespace rediscsharp
 
                     Console.WriteLine($"Received command: {command}");
 
-                    // Handle the PING command
-                    if (command.Equals("PING", StringComparison.OrdinalIgnoreCase))
+                    (string? cmds,string remains)=Dsrlz.dsrlz_str(command);
+                    if (string.IsNullOrEmpty(cmds) == false)
                     {
-                        _writer.WriteLine("+PONG");
+                        if (cmds.Equals("PING", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string pong=Srlz.srlz_simple_str("PONG");
+                            _writer.WriteLine(pong);
+                        }
+                        else
+                        {
+                            // Unknown command handling (optional)
+                            _writer.WriteLine($"-ERR unknown command {cmds}");
+                        }
                     }
                     else
                     {
-                        // Unknown command handling (optional)
-                        _writer.WriteLine("-ERR unknown command");
+                        (List<string>? cmda,string remaina)=Dsrlz.dsrlz_arr(command);
+                        if (cmda != null)
+                        {
+                            if (cmda[0].Equals("ECHO", StringComparison.OrdinalIgnoreCase))
+                            {
+                                for (int i = 1; i < cmda.Count; ++i)
+                                {
+                                    string echo = Srlz.srlz_simple_str(cmda[i]);
+                                    _writer.WriteLine(echo);
+                                }
+
+                            }
+                            else if (cmda[0].Equals("SET", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string key = cmdsa[1];
+                                string value = cmdsa[2];
+                                _memDb.Set(key, value);
+                                string ok = Srlz.srlz_simple_str("OK");
+                                _writer.WriteLine(ok);
+                            }
+                            else if (cmda[0].Equals("GET", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string key = cmdsa[1];
+
+                                string value = _memDb.Get(key);
+                                string okval = Srlz.srlz_simple_str(value);
+                                _writer.WriteLine(okval);
+                            }
+                            else
+                            {
+                                // Unknown command handling (optional)
+                                _writer.WriteLine($"-ERR unknown command {cmda[0]}");
+                            }
+                        }
                     }
+                    
                 }
             }
             catch (Exception ex)
