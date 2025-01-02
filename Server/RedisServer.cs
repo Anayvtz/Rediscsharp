@@ -31,8 +31,8 @@ namespace rediscsharp
                 {
                     var client = listener.AcceptTcpClient();
                     // Create a new thread for each incoming client
-                    var clientThread = new Thread(HandleClient);
-                    clientThread.Start(client);
+                    var clientThread = new Thread(new ConnClient(client).HandleClient);
+                    clientThread.Start();
                 }
                 catch (Exception ex)
                 {
